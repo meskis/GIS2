@@ -11,7 +11,10 @@ import org.geotools.geometry.DirectPosition2D;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.tool.CursorTool;
 import java.awt.Rectangle;
+import java.io.IOException;
 import static java.lang.Math.abs;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -25,6 +28,7 @@ public class AreaSelectorTool extends CursorTool {
     protected Point startPoint;
     protected Point endPoint;
     protected Rectangle rectangle;
+    private boolean dragged;
 
     public AreaSelectorTool(MapFrame map) {
         this.mapFrame = map;
@@ -34,16 +38,18 @@ public class AreaSelectorTool extends CursorTool {
 
     @Override
     public void onMouseClicked(MapMouseEvent ev) {
-
-        java.awt.Point screenPos = ev.getPoint();
-        Rectangle rectangle = new Rectangle(screenPos.x - 2, screenPos.y - 2,
-                5, 5);
-        //this.mapFrame.selectFeatures(rectangle);
+        try {
+            java.awt.Point screenPos = ev.getPoint();
+            Rectangle rectangle = new Rectangle(screenPos.x - 2, screenPos.y - 2, 5, 5);
+            this.mapFrame.selectFeatures(rectangle, mapFrame.getSelectedLayer(), "");
+        } catch (IOException ex) {
+            Logger.getLogger(AreaSelectorTool.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
     public void onMouseDragged(MapMouseEvent ev) {
-//        dragged = true;
+        dragged = true;
     }
 
     @Override
@@ -57,12 +63,13 @@ public class AreaSelectorTool extends CursorTool {
                 (int) startPosDevice.getX(),
                 (int) startPosDevice.getY(),
                 abs((int) (ev.getX() - startPosDevice.getX())),
-                abs((int) (ev.getY() - startPosDevice.getY()))
-                );
+                abs((int) (ev.getY() - startPosDevice.getY())));
+        
+        dragged = false;
 
         mapFrame.setSelectedRectangle(rectangle);
 
-        System.out.println(rectangle.toString());
+        System.out.println("Selected Rect: " + rectangle.toString());
     }
 
     @Override

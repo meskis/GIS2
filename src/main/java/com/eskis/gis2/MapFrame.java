@@ -198,7 +198,7 @@ public class MapFrame extends JMapFrame {
      *
      * @return
      */
-    private Layer getSelectedLayer() throws IOException {
+    public Layer getSelectedLayer() throws IOException {
         List<Layer> layers = this.getMapContent().layers();
         for (Layer element : layers) {
             if (element.isSelected()) {
