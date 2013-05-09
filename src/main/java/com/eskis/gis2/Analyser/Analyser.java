@@ -34,11 +34,12 @@ import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.FilterFactory2;
 import com.eskis.gis2.Helpers.BufferedFeatureCollection;
 import com.eskis.gis2.Helpers.ConversionUtils;
-import com.eskis.gis2.Helpers.IntersectedFeatureCollection;
 import org.geotools.feature.*;
 import org.geotools.metadata.iso.ApplicationSchemaInformationImpl;
 import org.opengis.feature.Attribute;
+import org.opengis.filter.Filter;
 import org.opengis.parameter.ParameterNotFoundException;
+import com.eskis.gis2.Helpers.IntersectedFeatureCollection;
 
 /**
  *
@@ -89,14 +90,14 @@ public class Analyser {
             constructCities();
             System.out.println("Cities constructed...");
 
-//            constructRiverLayer();
-//            System.out.println("Rivers constructed...");
-//
-//            constructRoadLayer();
-//            System.out.println("Roads constructed...");
-//
-//            calcFinalArea();
-//            System.out.println("Final area constructed...");
+            constructRiverLayer();
+            System.out.println("Rivers constructed...");
+
+            constructRoadLayer();
+            System.out.println("Roads constructed...");
+
+            calcFinalArea();
+            System.out.println("Final area constructed...");
 
             constructReljef();
             System.out.println("Reljef  constructed...");
@@ -107,7 +108,9 @@ public class Analyser {
             System.out.println("marking peaks...");
             markPeaks();
             
+            // Add
             findPeaks();
+            findforestsNear();
             
             System.out.println("Done.");
 
@@ -438,16 +441,15 @@ public class Analyser {
             while(peakIterator.hasNext()){
                 SimpleFeature peakFeature = peakIterator.next();
                 
-//                double height = Double.parseDouble( peakFeature.getAttribute("AUKSTIS").toString());
-//                
-//                if(highest < height){
-//                    highest = height;
-//                    peakFeature.setAttribute("peak", highest);
-//                }
-//                
-//                System.out.println("Aukstis: " + height);
-//                
-//                peakFeature.setAttribute("height", height);
+                double height = Double.parseDouble( peakFeature.getAttribute("Aukstis").toString());
+                
+                if(highest < height){
+                    highest = height;
+                    areaFeature.setAttribute("peak", highest);
+                }
+                
+                System.out.println("Aukstis: " + height);
+                
             }
 
         }
@@ -464,7 +466,7 @@ public class Analyser {
         while(reljefIterator.hasNext()){
             SimpleFeature reljefFeature = reljefIterator.next();
             
-            double height = Double.parseDouble(reljefFeature.getAttribute("AUKSTIS").toString());
+            double height = Double.parseDouble(reljefFeature.getAttribute("Aukstis").toString());
             
             // Most height
             if(highest < height){
@@ -478,7 +480,9 @@ public class Analyser {
             }
         }
         
-        System.out.print("Difference between: " + (highest - lowest));
+        System.out.println("Lowest: " + lowest);
+        System.out.println("Highest: "+ highest);
+        System.out.println("Difference between: " + (highest - lowest));
         
         // MARK HIGHEST PEAK
         
@@ -492,5 +496,26 @@ public class Analyser {
             
         }
         
+    }
+
+    private void findforestsNear() throws IOException {
+        
+        SimpleFeatureCollection forestObjects = (SimpleFeatureCollection) mapFrame.getAreaLeyer().getFeatureSource().getFeatures();
+        
+        SimpleFeatureCollection cross = new IntersectedFeatureCollection(forestObjects, foundAreaObjects);
+        
+        SimpleFeatureIterator iter = cross.features();
+        
+        SimpleFeatureCollection coll = FeatureCollections.newCollection();
+        
+        while(iter.hasNext()){
+            SimpleFeature crossFeature = iter.next();
+            
+            coll.add(crossFeature);
+        }
+        
+        addNewLayer(coll, "Forests & Areas");
+        
+        System.out.println("Cross size: " + cross.size());
     }
 }

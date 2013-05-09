@@ -33,8 +33,8 @@ public class LayerHelper {
 
         files.add("sven_KEL_L.shp");
         files.add("sven_HID_L.shp");
-        //files.add("sven_PLO_P.shp");
-        files.add("sven_REL_L.shp");
+        files.add("sven_REL_P.shp");
+        files.add("sven_PLO_P.shp");
 
         for (Iterator<String> i = files.iterator(); i.hasNext();) {
             String filename = i.next();

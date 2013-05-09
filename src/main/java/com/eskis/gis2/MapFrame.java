@@ -299,7 +299,7 @@ public class MapFrame extends JMapFrame {
     }
 
     public Layer getCitylayer() {
-        return this.getMapContent().layers().get(3);
+        return this.getMapContent().layers().get(4);
     }
 
     public Layer getRoadLayer() {
@@ -307,7 +307,7 @@ public class MapFrame extends JMapFrame {
     }
 
     public Layer getRegionLayer() {
-        return this.getMapContent().layers().get(4);
+        return this.getMapContent().layers().get(5);
     }
 
     public Layer getRiverLayer() {
@@ -317,11 +317,16 @@ public class MapFrame extends JMapFrame {
     public double getRoadDistance() {
         return gui.getRoadDistance();
     }
-
+    
     public Layer getReljefLayer() {
+        return this.getMapContent().layers().get(3);
+    }
+    
+    public Layer getAreaLeyer()
+    {
         return this.getMapContent().layers().get(2);
     }
-
+    
     private enum GeometryType {
 
         POINT, LINE, POLYGON
