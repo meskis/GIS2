@@ -7,6 +7,7 @@ package com.eskis.gis2;
 import com.eskis.gis2.Actions.AreaSelectorAction;
 import com.eskis.gis2.Actions.ExecuteQueryAction;
 import com.eskis.gis2.Actions.PerformAnalysisAction;
+import com.eskis.gis2.GUI.GUI;
 import com.eskis.gis2.Helpers.LayerHelper;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiLineString;
@@ -54,6 +55,7 @@ import org.opengis.filter.identity.FeatureId;
  */
 public class MapFrame extends JMapFrame {
 
+    public GUI gui;
     private JMenuBar menubar = new JMenuBar();
     private JToolBar toolbar;
     private JPanel infoPanel = new JPanel(new BorderLayout());
@@ -277,23 +279,23 @@ public class MapFrame extends JMapFrame {
      * PARAMETERS
      */
     public float getRiverDistance() {
-        return 500;
+        return gui.getDistanceToRiver();
     }
 
     public float getArea() {
-        return 100;
+        return gui.getArea();
     }
 
     public float getCityDistance() {
-        return 15000;
+        return gui.getDistance();
     }
 
     public float getSlope() {
-        return 50;
+        return gui.getSlope();
     }
 
     public float getForests() {
-        return 20;
+        return gui.getForests();
     }
 
     public Layer getCitylayer() {
@@ -313,7 +315,7 @@ public class MapFrame extends JMapFrame {
     }
 
     public double getRoadDistance() {
-        return 300;
+        return gui.getRoadDistance();
     }
 
     public Layer getReljefLayer() {

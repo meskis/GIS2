@@ -25,6 +25,7 @@ public class PerformAnalysisAction extends SafeAction {
     @Override
     public void action(ActionEvent ae) throws Throwable {
         GUI gui = new GUI(mapFrame);
+        mapFrame.gui = gui;
         gui.show();
     }
    

@@ -92,7 +92,7 @@ public class ConversionUtils {
     public static SimpleFeatureCollection geometryToFeatures(Geometry geometry, String name, String typeStr) {
         SimpleFeatureType type = null;
         try {
-            type = DataUtilities.createType(name, "geom:" + typeStr + ":srid=3346,area:double");
+            type = DataUtilities.createType(name, "the_geom:" + typeStr + ":srid=3346,area:double");
         } catch (Exception e) {
             System.out.println("Error :" + e);
         }

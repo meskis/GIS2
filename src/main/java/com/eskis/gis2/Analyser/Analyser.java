@@ -88,35 +88,34 @@ public class Analyser {
             
             constructCities();
             System.out.println("Cities constructed...");
+
+//            constructRiverLayer();
+//            System.out.println("Rivers constructed...");
 //
-            constructRiverLayer();
-            System.out.println("Rivers constructed...");
-////            
-            constructRoadLayer();
-            System.out.println("Roads constructed...");
-//            
-            calcFinalArea();
-            System.out.println("Final area constructed...");
-////
+//            constructRoadLayer();
+//            System.out.println("Roads constructed...");
+//
+//            calcFinalArea();
+//            System.out.println("Final area constructed...");
+
             constructReljef();
             System.out.println("Reljef  constructed...");
-//
+
             searchArea();
             System.out.println("Search done.");
-//
+
             System.out.println("marking peaks...");
             markPeaks();
-
+            
+            findPeaks();
+            
             System.out.println("Done.");
-
-
 
             JOptionPane.showMessageDialog(null, "Analysis done.");
 
-
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Klaida analizuojant: " + e.toString());
-            //JOptionPane.showMessageDialog(null, e.getStackTrace());
+            JOptionPane.showMessageDialog(null, e.getStackTrace());
         }
     }
 
@@ -131,13 +130,13 @@ public class Analyser {
 
         // Join geometries
         Geometry cityFeatures = ConversionUtils.getGeometries(bufferizedCities);
-        Geometry oneBigCity = cityFeatures.buffer(500); // sujungia i viena
+        Geometry oneBigCity = cityFeatures.buffer(0); // sujungia i viena
         
         cityAreaGeometry = oneBigCity;
 
         SimpleFeatureCollection cities = ConversionUtils.geometryToFeatures(oneBigCity, "BigCityArea");
-        Style style = SLD.createPolygonStyle(DEFAULT_LINE, Color.CYAN, 1);
-        Layer layer = new FeatureLayer(bufferizedCities, style, "CityArea");
+        Style style = SLD.createPolygonStyle(DEFAULT_LINE, Color.GRAY, 0.5f);
+        Layer layer = new FeatureLayer(cities, style, "CityArea");
         layer.setVisible(false);
         this.mapFrame.getMapContent().addLayer(layer);
         cityAreaLayer = layer;
@@ -260,7 +259,7 @@ public class Analyser {
 
         // Display final area
         finalSearchCollectio = ConversionUtils.geometryToFeatures(searchArea, "FinalArea");
-        Style style = SLD.createPolygonStyle(DEFAULT_LINE, Color.RED, 1);
+        Style style = SLD.createPolygonStyle(DEFAULT_LINE, Color.pink, 0.5f);
         Layer layer = new FeatureLayer(finalSearchCollectio, style, "Final");
         layer.setVisible(true);
         this.mapFrame.getMapContent().addLayer(layer);
@@ -271,7 +270,15 @@ public class Analyser {
      */
     private void searchArea() {
 
+        if(searchArea == null){
+            return;
+        }
+        
         SimpleFeatureCollection searchAreaObjects = ConversionUtils.geometryToFeatures(searchArea, "obj");
+        
+        if(searchAreaObjects.size() == 0){
+            return;
+        }
 
         DefaultFeatureCollection searchAreaObjectsWithReljef = new DefaultFeatureCollection(new IntersectedFeatureCollection(searchAreaObjects, selectedReljefFeatures));
 
@@ -284,14 +291,13 @@ public class Analyser {
 
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
         typeBuilder.setCRS(searchAreaObjectsWithReljef.getSchema().getCoordinateReferenceSystem());
-        typeBuilder.setName("Sklypas");
+        typeBuilder.setName("Area");
 
         AttributeTypeBuilder builderA = new AttributeTypeBuilder();
         builderA.setBinding(MultiPolygon.class);
         AttributeDescriptor attributeDescriptor = builderA.buildDescriptor("the_geom", builderA.buildType());
         typeBuilder.add(attributeDescriptor);
         
-        typeBuilder.add("atstumas", String.class);
         typeBuilder.add("height", Integer.class);
         typeBuilder.add("slope", Integer.class);
         typeBuilder.add("peak", Integer.class);
@@ -320,7 +326,7 @@ public class Analyser {
             // Sklypo krastine
             double side = this.mapFrame.getArea();
             
-            int krastine = (int) side;
+            int sideLine = (int) side;
             // jei maziau nei sklypo dydis nei nedet
             if ((abcisis < side) || (ordinate < side)) {
                 continue;
@@ -328,10 +334,10 @@ public class Analyser {
                 int j = (int) abcisis;
                 int k = (int) ordinate;
                 boolean ardidint = true;
-                for (int l = (int) miX; l < (int) maX - krastine; l++) {
+                for (int l = (int) miX; l < (int) maX - sideLine; l++) {
                     boolean keisti = false;
-                    for (int l2 = (int) miY; l2 < (int) maY - krastine; l2++) {
-                        Geometry sklypas = sklypas(l, l2, side);
+                    for (int l2 = (int) miY; l2 < (int) maY - sideLine; l2++) {
+                        Geometry sklypas = areaMarker(l, l2, side);
                         if (!geometrijos.isEmpty()) {
                             Iterator<Geometry> ijk = geometrijos.iterator();
                             boolean breaking = false;
@@ -361,7 +367,7 @@ public class Analyser {
                             resultFeature.setDefaultGeometry(sklypas);
                             areaFeatures.add(resultFeature);
                             id++;
-                            l2 += krastine;
+                            l2 += sideLine;
                             ardidint = true;
                         }
 
@@ -372,7 +378,7 @@ public class Analyser {
                 i.close();
                 break;
             }
-            System.out.println("Sekantis, jau yra: " + id);
+            System.out.println("Found: " + id);
 
         };
         Style styleG = SLD.createPolygonStyle(DEFAULT_LINE, Color.RED, 1);
@@ -383,7 +389,7 @@ public class Analyser {
         foundAreaObjects = areaFeatures;
 
     }
-    public Polygon sklypas(double x, double y, double krastas) {
+    public Polygon areaMarker(double x, double y, double krastas) {
         GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
         Coordinate[] coords = new Coordinate[5];
         Coordinate X1 = new Coordinate(x, y);
@@ -407,14 +413,19 @@ public class Analyser {
      * Search for peaks and marking all.
      */
     private void markPeaks() throws IOException {
+        
+        if(foundAreaObjects == null){
+            return;
+        }
 
         // Iterate over all found areas to mark peaks 
         SimpleFeatureIterator iter = (SimpleFeatureIterator) foundAreaObjects.features();
-
+        
+        
         while (iter.hasNext()) {
             SimpleFeature areaFeature = iter.next();
             Geometry areaGeometry = (Geometry) areaFeature.getDefaultGeometry();
-
+            
             FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
             
             org.geotools.filter.Filter filter = (org.geotools.filter.Filter) ff.intersects(ff.property("the_geom"), ff.literal(areaGeometry));
@@ -427,19 +438,59 @@ public class Analyser {
             while(peakIterator.hasNext()){
                 SimpleFeature peakFeature = peakIterator.next();
                 
-                double height = Double.parseDouble( peakFeature.getAttribute("AUKSTIS").toString());
-                
-                if(highest < height){
-                    highest = height;
-                    peakFeature.setAttribute("peak", highest);
-                }
-                
-                System.out.println("Aukstis: " + height);
-                
-                peakFeature.setAttribute("height", height);
+//                double height = Double.parseDouble( peakFeature.getAttribute("AUKSTIS").toString());
+//                
+//                if(highest < height){
+//                    highest = height;
+//                    peakFeature.setAttribute("peak", highest);
+//                }
+//                
+//                System.out.println("Aukstis: " + height);
+//                
+//                peakFeature.setAttribute("height", height);
             }
 
         }
 
+    }
+
+    private void findPeaks() {
+        SimpleFeatureIterator reljefIterator = (SimpleFeatureIterator) selectedReljefFeatures.features();
+        
+        double highest = 0;
+        SimpleFeature highestPeak = null;
+        double lowest = 999999;
+        
+        while(reljefIterator.hasNext()){
+            SimpleFeature reljefFeature = reljefIterator.next();
+            
+            double height = Double.parseDouble(reljefFeature.getAttribute("AUKSTIS").toString());
+            
+            // Most height
+            if(highest < height){
+                highest = height;
+                highestPeak = reljefFeature;
+            }
+            
+            // least height
+            if(lowest > height){
+                lowest = height;
+            }
+        }
+        
+        System.out.print("Difference between: " + (highest - lowest));
+        
+        // MARK HIGHEST PEAK
+        
+        if(highestPeak != null) {
+            // Create highest peak 
+
+            SimpleFeatureCollection peakCollection = FeatureCollections.newCollection();
+            peakCollection.add(highestPeak);
+            
+            addNewLayer(peakCollection, "Highest Peak");
+            
+        }
+        
     }
 }
