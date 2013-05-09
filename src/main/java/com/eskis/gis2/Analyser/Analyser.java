@@ -38,6 +38,7 @@ import com.eskis.gis2.Helpers.IntersectedFeatureCollection;
 import org.geotools.feature.*;
 import org.geotools.metadata.iso.ApplicationSchemaInformationImpl;
 import org.opengis.feature.Attribute;
+import org.opengis.parameter.ParameterNotFoundException;
 
 /**
  *
@@ -58,6 +59,7 @@ public class Analyser {
     protected Layer roadAreaLayer;
     protected Geometry roadAreaGeometry;
     FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+    
     /**
      * Results
      */
@@ -83,6 +85,7 @@ public class Analyser {
         try {
             // Prepare selection
             prepare();
+            
             constructCities();
             System.out.println("Cities constructed...");
 //
@@ -113,7 +116,7 @@ public class Analyser {
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Klaida analizuojant: " + e.toString());
-            JOptionPane.showMessageDialog(null, e.getStackTrace());
+            //JOptionPane.showMessageDialog(null, e.getStackTrace());
         }
     }
 
@@ -230,6 +233,10 @@ public class Analyser {
 
         // With world coords
         selectionRectangle = mapFrame.getSelectedRectangle();
+        
+        if(selectionRectangle == null ){
+            throw new ParameterNotFoundException("Please selecta rea first!", null);
+        }
 
         System.out.println("RECTANGLE: maxX " + selectionRectangle.getMaxX()
                 + " maxY " + selectionRectangle.getMaxY() + " minX "
@@ -276,9 +283,7 @@ public class Analyser {
         // Draw search area
 
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
-        // typeBuilder.setCRS(CRS.decode("EPSG:3346"));
         typeBuilder.setCRS(searchAreaObjectsWithReljef.getSchema().getCoordinateReferenceSystem());
-        // typeBuilder.setName(name);
         typeBuilder.setName("Sklypas");
 
         AttributeTypeBuilder builderA = new AttributeTypeBuilder();
@@ -286,7 +291,6 @@ public class Analyser {
         AttributeDescriptor attributeDescriptor = builderA.buildDescriptor("the_geom", builderA.buildType());
         typeBuilder.add(attributeDescriptor);
         
-        //typeBuilder.add("geom", Polygon.class, 3346);
         typeBuilder.add("atstumas", String.class);
         typeBuilder.add("height", Integer.class);
         typeBuilder.add("slope", Integer.class);
@@ -299,8 +303,7 @@ public class Analyser {
 
         Collection<Geometry> geometrijos = new ArrayList<Geometry>();
 
-        SimpleFeatureCollection featurai = FeatureCollections.newCollection();
-
+        SimpleFeatureCollection areaFeatures = FeatureCollections.newCollection();
 
         int id = 1;
         while (i.hasNext()) {
@@ -311,24 +314,24 @@ public class Analyser {
             double maX = bbox.getEnvelopeInternal().getMaxX();
             double miY = bbox.getEnvelopeInternal().getMinY();
             double maY = bbox.getEnvelopeInternal().getMaxY();
-            double iksai = maX - miX;
-            double ygrekai = maY - miY;
+            double abcisis = maX - miX;
+            double ordinate = maY - miY;
             
-            // Sklypo plotas
-            double krastas = this.mapFrame.getArea();
+            // Sklypo krastine
+            double side = this.mapFrame.getArea();
             
-            int krastine = (int) krastas;
+            int krastine = (int) side;
             // jei maziau nei sklypo dydis nei nedet
-            if ((iksai < krastas) || (ygrekai < krastas)) {
+            if ((abcisis < side) || (ordinate < side)) {
                 continue;
             } else {
-                int j = (int) iksai;
-                int k = (int) ygrekai;
+                int j = (int) abcisis;
+                int k = (int) ordinate;
                 boolean ardidint = true;
                 for (int l = (int) miX; l < (int) maX - krastine; l++) {
                     boolean keisti = false;
                     for (int l2 = (int) miY; l2 < (int) maY - krastine; l2++) {
-                        Geometry sklypas = sklypas(l, l2, krastas);
+                        Geometry sklypas = sklypas(l, l2, side);
                         if (!geometrijos.isEmpty()) {
                             Iterator<Geometry> ijk = geometrijos.iterator();
                             boolean breaking = false;
@@ -356,7 +359,7 @@ public class Analyser {
                                                         
                             SimpleFeature resultFeature = builder.buildFeature(String.valueOf(id));
                             resultFeature.setDefaultGeometry(sklypas);
-                            featurai.add(resultFeature);
+                            areaFeatures.add(resultFeature);
                             id++;
                             l2 += krastine;
                             ardidint = true;
@@ -373,11 +376,11 @@ public class Analyser {
 
         };
         Style styleG = SLD.createPolygonStyle(DEFAULT_LINE, Color.RED, 1);
-        Layer layerG = new FeatureLayer(featurai, styleG);
+        Layer layerG = new FeatureLayer(areaFeatures, styleG);
         layerG.setTitle("Found areas");
         this.mapFrame.getMapContent().addLayer(layerG);
         
-        foundAreaObjects = featurai;
+        foundAreaObjects = areaFeatures;
 
     }
     public Polygon sklypas(double x, double y, double krastas) {
